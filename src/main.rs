@@ -1,9 +1,10 @@
 use std::str::FromStr;
 use std::io::{Error, ErrorKind};
+use serde::Serialize;
 
 use warp::Filter;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct Question {
     id: QuestionId,
     title: String,
@@ -11,7 +12,7 @@ struct Question {
     tags: Option<Vec<String>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct QuestionId(String);
 
 impl Question {
