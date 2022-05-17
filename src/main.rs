@@ -1,5 +1,7 @@
 use std::str::FromStr;
 use std::io::{Error, ErrorKind};
+use std::collections::HashMap;
+
 use serde::Serialize;
 
 use warp::{
@@ -14,6 +16,31 @@ use warp::{
     http::StatusCode
 };
 
+struct Store {
+    questions: HashMap<QuestionId, Question>,
+}
+
+impl Store {
+    fn new() -> Store {
+        Store { questions: HashMap::new(), }
+    }
+
+    fn init(self) -> Store {
+        let question = Question::new(
+            QuestionId::from_str("1").expect("invalid Id"),
+            "How?".to_string(),
+            "Please help!".to_string(),
+            Some(vec!["general".to_string()])
+        );
+        self.add_question(question)
+    }
+
+    fn add_question(mut self, question: Question) -> Store {
+        self.questions.insert(question.id.clone(), question);
+        self
+    }
+}
+
 #[derive(Debug, Serialize)]
 struct Question {
     id: QuestionId,
@@ -21,9 +48,6 @@ struct Question {
     content: String,
     tags: Option<Vec<String>>,
 }
-
-#[derive(Debug, Serialize)]
-struct QuestionId(String);
 
 impl Question {
     fn new(id: QuestionId, title: String, content: String, tags: Option<Vec<String>>) -> Self {
@@ -35,6 +59,9 @@ impl Question {
         }
     }
 }
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
+struct QuestionId(String);
 
 impl FromStr for QuestionId {
     type Err = std::io::Error;
