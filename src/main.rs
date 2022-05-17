@@ -51,11 +51,11 @@ async fn get_questions() -> Result<impl warp::Reply, warp::Rejection> {
         Some(vec!["faq".to_string()])
     );
 
-    match question.id.0.is_empty() {
-        true => {
+    match question.id.0.parse::<i32>() {
+        Err(_) => {
             Err(warp::reject::custom(InvalidId))
         },
-        false => {
+        Ok(_) => {
             Ok(warp::reply::json(
                 &question
             ))
