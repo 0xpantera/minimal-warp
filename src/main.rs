@@ -1,5 +1,3 @@
-use std::str::FromStr;
-use std::io::{Error, ErrorKind};
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -40,53 +38,21 @@ struct Question {
     tags: Option<Vec<String>>,
 }
 
-impl Question {
-    fn new(id: QuestionId, title: String, content: String, tags: Option<Vec<String>>) -> Self {
-        Question { 
-            id,
-            title,
-            content,
-            tags 
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 struct QuestionId(String);
-
-impl FromStr for QuestionId {
-    type Err = std::io::Error;
-    
-    fn from_str(id: &str) -> Result<Self, Self::Err> {
-        match id.is_empty() {
-            false => Ok(QuestionId(id.to_string())),
-            true => Err(Error::new(ErrorKind::InvalidInput, "No id provided")),
-        }
-    }
-}
 
 #[derive(Debug)]
 struct InvalidId;
 impl Reject for InvalidId {}
 
-async fn get_questions() -> Result<impl warp::Reply, warp::Rejection> {
-    let question = Question::new(
-        QuestionId::from_str("1").expect("No id provided"),
-        "First Question".to_string(),
-        "Content of question".to_string(),
-        Some(vec!["faq".to_string()])
-    );
+async fn get_questions(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    let res: Vec<Question> = store
+        .questions
+        .values()
+        .cloned()
+        .collect();
 
-    match question.id.0.parse::<i32>() {
-        Err(_) => {
-            Err(warp::reject::custom(InvalidId))
-        },
-        Ok(_) => {
-            Ok(warp::reply::json(
-                &question
-            ))
-        }
-    }
+        Ok(warp::reply::json(&res))
 }
 
 async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
@@ -94,11 +60,6 @@ async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
         Ok(warp::reply::with_status(
             error.to_string(),
             StatusCode::FORBIDDEN,
-        ))
-    } else if let Some(InvalidId) = r.find() {
-        Ok(warp::reply::with_status(
-            "No valid ID presented".to_string(),
-            StatusCode::UNPROCESSABLE_ENTITY,
         ))
     } else {
         Ok(warp::reply::with_status(
