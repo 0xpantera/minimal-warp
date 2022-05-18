@@ -45,7 +45,7 @@ struct QuestionId(String);
 struct InvalidId;
 impl Reject for InvalidId {}
 
-async fn get_questions(store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+async fn get_questions(params: HashMap<String, String>, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
     let res: Vec<Question> = store
         .questions
         .values()
@@ -82,7 +82,8 @@ async fn main() {
     let get_items = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::end())
-        .and(store_filter)
+        .and(warp::query())
+        .and(store_filter.clone())
         .and_then(get_questions)
         .recover(return_error);
 
