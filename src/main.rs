@@ -30,6 +30,12 @@ impl Store {
     }
 }
 
+#[derive(Debug)]
+enum Error {
+    ParseError(std::num::ParseIntError),
+    MissingParameters,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Question {
     id: QuestionId,
@@ -46,6 +52,16 @@ struct InvalidId;
 impl Reject for InvalidId {}
 
 async fn get_questions(params: HashMap<String, String>, store: Store) -> Result<impl warp::Reply, warp::Rejection> {
+    println!("{:?}", params);
+
+    let mut start = 0;
+
+    if let Some(n) = params.get("start") {
+        start = n.parse::<usize>().expect("Could not parse start");
+    }
+
+    println!("{}", start);
+
     let res: Vec<Question> = store
         .questions
         .values()
