@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::io::{Error, ErrorKind};
 use std::collections::HashMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use warp::{
     Filter, 
@@ -16,32 +16,23 @@ use warp::{
     http::StatusCode
 };
 
+#[derive(Clone)]
 struct Store {
     questions: HashMap<QuestionId, Question>,
 }
 
 impl Store {
     fn new() -> Store {
-        Store { questions: HashMap::new(), }
+        Store { questions: Self::init(), }
     }
 
-    fn init(self) -> Store {
-        let question = Question::new(
-            QuestionId::from_str("1").expect("invalid Id"),
-            "How?".to_string(),
-            "Please help!".to_string(),
-            Some(vec!["general".to_string()])
-        );
-        self.add_question(question)
-    }
-
-    fn add_question(mut self, question: Question) -> Store {
-        self.questions.insert(question.id.clone(), question);
-        self
+    fn init() -> HashMap<QuestionId, Question> {
+        let file = include_str!("../questions.json");
+        serde_json::from_str(file).expect("can't read questions.json")
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Question {
     id: QuestionId,
     title: String,
@@ -60,7 +51,7 @@ impl Question {
     }
 }
 
-#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 struct QuestionId(String);
 
 impl FromStr for QuestionId {
@@ -119,6 +110,9 @@ async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
 
 #[tokio::main]
 async fn main() {
+    let store = Store::new();
+    let store_filter = warp::any().map(move || store.clone());
+
     let cors = warp::cors()
         .allow_any_origin()
         .allow_header("content-type")
@@ -127,6 +121,7 @@ async fn main() {
     let get_items = warp::get()
         .and(warp::path("questions"))
         .and(warp::path::end())
+        .and(store_filter)
         .and_then(get_questions)
         .recover(return_error);
 
