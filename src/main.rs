@@ -36,6 +36,18 @@ enum Error {
     MissingParameters,
 }
 
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // maybe *self is needed?
+        match self {
+            Error::ParseError(ref err) => write!(f, "Cannot parse parameter: {}", err),
+            Error::MissingParameters => write!(f, "Missing parameter"),
+        }
+    }
+}
+
+impl Reject for Error {}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Question {
     id: QuestionId,
