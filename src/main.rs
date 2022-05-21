@@ -8,13 +8,7 @@ use serde::{Deserialize, Serialize};
 use warp::{
     Filter, 
     http::Method,
-    filters::{
-        cors::CorsForbidden,
-    },
-    reject::Reject, 
-    Rejection,
-    Reply,
-    http::StatusCode, body::BodyDeserializeError
+    http::StatusCode,
 };
 
 #[derive(Clone)]
@@ -37,26 +31,72 @@ impl Store {
     }
 }
 
-#[derive(Debug)]
-enum Error {
-    ParseError(std::num::ParseIntError),
-    MissingParameters,
-    QuestionNotFound,
-}
+mod error {
+    use warp::{
+        filters::{
+            body::BodyDeserializeError,
+            cors::CorsForbidden,
+        },
+        reject::Reject,
+        Rejection,
+        Reply,
+        http::StatusCode,
+    };
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Why *self and not just self (&self)?
-        // Would it then only match on a reference?
-        match *self {
-            Error::ParseError(ref err) => write!(f, "Cannot parse parameter: {}", err),
-            Error::MissingParameters => write!(f, "Missing parameter"),
-            Error::QuestionNotFound => write!(f, "Question not Found"),
+    #[derive(Debug)]
+    pub enum Error {
+        ParseError(std::num::ParseIntError),
+        MissingParameters,
+        QuestionNotFound,
+    }
+
+    impl std::fmt::Display for Error {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            // Why *self and not just self (&self)?
+            // Would it then only match on a reference?
+            match *self {
+                Error::ParseError(ref err) => write!(f, "Cannot parse parameter: {}", err),
+                Error::MissingParameters => write!(f, "Missing parameter"),
+                Error::QuestionNotFound => write!(f, "Question not Found"),
+            }
         }
     }
+
+    impl Reject for Error {}
+
+    #[derive(Debug)]
+    struct InvalidId;
+    impl Reject for InvalidId {}
+
+    // Any error that doesn't match the first two conditions will return
+    // "Route not found". Not ideal.
+    pub async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
+        if let Some(error) = r.find::<Error>() {
+            Ok(warp::reply::with_status(
+                error.to_string(),
+                StatusCode::RANGE_NOT_SATISFIABLE,
+            ))
+        } else if let Some(error) = r.find::<CorsForbidden>() {
+            Ok(warp::reply::with_status(
+                error.to_string(),
+                StatusCode::FORBIDDEN,
+            ))
+        } else if let Some(error) = r.find::<BodyDeserializeError>() {
+            Ok(warp::reply::with_status(
+                error.to_string(),
+                StatusCode::UNPROCESSABLE_ENTITY,
+            ))
+        } else {
+            Ok(warp::reply::with_status(
+                "Route not found".to_string(),
+                StatusCode::NOT_FOUND,
+            ))
+        }
 }
 
-impl Reject for Error {}
+}
+
+
 
 #[derive(Debug)]
 struct Pagination {
@@ -85,29 +125,27 @@ struct Question {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 struct QuestionId(String);
 
-#[derive(Debug)]
-struct InvalidId;
-impl Reject for InvalidId {}
+
 
 // TODO:
 // What happens if we specify an end parameter which is greater than the length of our vector? 
 // And what happens if start is 20 and end is 10?
-fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, Error> {
+fn extract_pagination(params: HashMap<String, String>) -> Result<Pagination, error::Error> {
     if params.contains_key("start") && params.contains_key("end") {
         return Ok(Pagination {
             start: params
                 .get("start")
                 .unwrap()
                 .parse::<usize>()
-                .map_err(Error::ParseError)?,
+                .map_err(error::Error::ParseError)?,
             end: params
                 .get("end")
                 .unwrap()
                 .parse::<usize>()
-                .map_err(Error::ParseError)?,
+                .map_err(error::Error::ParseError)?,
         });
     }
-    Err(Error::MissingParameters)
+    Err(error::Error::MissingParameters)
 }
 
 async fn get_questions(
@@ -163,7 +201,7 @@ async fn delete_question(
     match store.questions.write().remove(&QuestionId(id)) {
         Some(_) => return Ok(warp::reply::with_status(
             "Question deleted", StatusCode::OK)),
-        None => return Err(warp::reject::custom(Error::QuestionNotFound))
+        None => return Err(warp::reject::custom(error::Error::QuestionNotFound))
     }
 }
 
@@ -187,32 +225,6 @@ async fn add_answer(
     Ok(warp::reply::with_status(
         "Answer added",
         StatusCode::OK))
-}
-
-// Any error that doesn't match the first two conditions will return
-// "Route not found". Not ideal.
-async fn return_error(r: Rejection) -> Result<impl Reply, Rejection> {
-    if let Some(error) = r.find::<Error>() {
-        Ok(warp::reply::with_status(
-            error.to_string(),
-            StatusCode::RANGE_NOT_SATISFIABLE,
-        ))
-    } else if let Some(error) = r.find::<CorsForbidden>() {
-        Ok(warp::reply::with_status(
-            error.to_string(),
-            StatusCode::FORBIDDEN,
-        ))
-    } else if let Some(error) = r.find::<BodyDeserializeError>() {
-        Ok(warp::reply::with_status(
-            error.to_string(),
-            StatusCode::UNPROCESSABLE_ENTITY,
-        ))
-    } else {
-        Ok(warp::reply::with_status(
-            "Route not found".to_string(),
-            StatusCode::NOT_FOUND,
-        ))
-    }
 }
 
 #[tokio::main]
@@ -266,7 +278,7 @@ async fn main() {
         .or(update_question)
         .or(delete_question)
         .with(cors)
-        .recover(return_error);
+        .recover(error::return_error);
 
     warp::serve(routes)
         .run(([127, 0, 0, 1], 3030))
