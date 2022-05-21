@@ -167,6 +167,11 @@ async fn delete_question(
     }
 }
 
+// TODO:
+// Create a random, unique ID instead of the one by hand
+// Add error handling if the fields we require aren't present
+// Check if a question exists
+// Change route to answers: /questions/:questionId/answers 
 async fn add_answer(
     store: Store,
     params: HashMap<String, String>,
