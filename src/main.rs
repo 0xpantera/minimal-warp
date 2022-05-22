@@ -1,5 +1,7 @@
-use warp::{Filter, http::Method};
+#![warn(clippy::all)]
+
 use handle_errors::return_error;
+use warp::{http::Method, Filter};
 
 mod routes;
 mod store;
@@ -59,7 +61,5 @@ async fn main() {
         .with(cors)
         .recover(return_error);
 
-    warp::serve(routes)
-        .run(([127, 0, 0, 1], 3030))
-        .await;
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

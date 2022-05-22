@@ -8,15 +8,13 @@ use crate::{
         answer::{Answer, AnswerId},
         question::QuestionId,
     },
-
 };
-
 
 // TODO:
 // Create a random, unique ID instead of the one by hand
 // Add error handling if the fields we require aren't present
 // Check if a question exists
-// Change route to answers: /questions/:questionId/answers 
+// Change route to answers: /questions/:questionId/answers
 pub async fn add_answer(
     store: Store,
     params: HashMap<String, String>,
@@ -29,7 +27,5 @@ pub async fn add_answer(
 
     store.answers.write().insert(answer.id.clone(), answer);
 
-    Ok(warp::reply::with_status(
-        "Answer added",
-        StatusCode::OK))
+    Ok(warp::reply::with_status("Answer added", StatusCode::OK))
 }

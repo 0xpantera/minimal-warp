@@ -1,15 +1,13 @@
+use handle_errors::Error;
 use std::collections::HashMap;
 use warp::hyper::StatusCode;
-use handle_errors::Error;
 
 use crate::store::Store;
 
-
 use crate::types::{
-    question::{Question, QuestionId},
     pagination::extract_pagination,
+    question::{Question, QuestionId},
 };
-
 
 pub async fn get_questions(
     params: HashMap<String, String>,
@@ -27,7 +25,7 @@ pub async fn get_questions(
 }
 
 pub async fn add_question(
-    store: Store, 
+    store: Store,
     question: Question,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     store
@@ -35,26 +33,20 @@ pub async fn add_question(
         .write()
         .insert(question.id.clone(), question);
 
-    Ok(warp::reply::with_status(
-        "Question added", 
-        StatusCode::OK,
-    ))
+    Ok(warp::reply::with_status("Question added", StatusCode::OK))
 }
 
 pub async fn update_question(
     id: String,
     store: Store,
-    question: Question
+    question: Question,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match store.questions.write().get_mut(&QuestionId(id)) {
         Some(q) => *q = question,
         None => return Err(warp::reject::custom(Error::QuestionNotFound)),
     }
 
-    Ok(warp::reply::with_status(
-        "Question updated", 
-        StatusCode::OK,
-    ))
+    Ok(warp::reply::with_status("Question updated", StatusCode::OK))
 }
 
 pub async fn delete_question(
@@ -62,8 +54,7 @@ pub async fn delete_question(
     store: Store,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match store.questions.write().remove(&QuestionId(id)) {
-        Some(_) => return Ok(warp::reply::with_status(
-            "Question deleted", StatusCode::OK)),
-        None => return Err(warp::reject::custom(Error::QuestionNotFound))
+        Some(_) => Ok(warp::reply::with_status("Question deleted", StatusCode::OK)),
+        None => Err(warp::reject::custom(Error::QuestionNotFound)),
     }
 }

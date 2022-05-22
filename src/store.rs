@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use parking_lot::RwLock;
 
@@ -7,8 +7,6 @@ use crate::types::{
     answer::{Answer, AnswerId},
     question::{Question, QuestionId},
 };
-
-
 
 #[derive(Clone)]
 pub struct Store {
@@ -18,7 +16,7 @@ pub struct Store {
 
 impl Store {
     pub fn new() -> Store {
-        Store { 
+        Store {
             questions: Arc::new(RwLock::new(Self::init())),
             answers: Arc::new(RwLock::new(HashMap::new())),
         }
