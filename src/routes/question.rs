@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-
 use warp::hyper::StatusCode;
+use handle_errors::Error;
 
 use crate::store::Store;
-use crate::error;
+
 
 use crate::types::{
     question::{Question, QuestionId},
@@ -48,7 +48,7 @@ pub async fn update_question(
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match store.questions.write().get_mut(&QuestionId(id)) {
         Some(q) => *q = question,
-        None => return Err(warp::reject::custom(error::Error::QuestionNotFound)),
+        None => return Err(warp::reject::custom(Error::QuestionNotFound)),
     }
 
     Ok(warp::reply::with_status(
@@ -64,6 +64,6 @@ pub async fn delete_question(
     match store.questions.write().remove(&QuestionId(id)) {
         Some(_) => return Ok(warp::reply::with_status(
             "Question deleted", StatusCode::OK)),
-        None => return Err(warp::reject::custom(error::Error::QuestionNotFound))
+        None => return Err(warp::reject::custom(Error::QuestionNotFound))
     }
 }
