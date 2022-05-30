@@ -1,0 +1,15 @@
+2022-05-30T17:25:36.030508-06:00 - This is an error!
+2022-05-30T17:25:36.030645-06:00 - This is an info!
+2022-05-30T17:25:36.030699-06:00 - This is a warning!
+2022-05-30T17:25:36.032889-06:00 - Server::run; addr=127.0.0.1:3030
+2022-05-30T17:25:36.032947-06:00 - listening on http://127.0.0.1:3030
+2022-05-30T17:27:39.039400-06:00 - parsed 3 headers
+2022-05-30T17:27:39.039489-06:00 - incoming body is empty
+2022-05-30T17:27:39.039612-06:00 - route was called without a query string, defaulting to empty
+2022-05-30T17:27:39.039822-06:00 - flushed 179 bytes
+2022-05-30T17:27:39.040161-06:00 - read eof
+2022-05-30T17:27:51.518123-06:00 - parsed 3 headers
+2022-05-30T17:27:51.518198-06:00 - incoming body is empty
+2022-05-30T17:27:51.518323-06:00 - route was called without a query string, defaulting to empty
+2022-05-30T17:27:51.518532-06:00 - flushed 179 bytes
+2022-05-30T17:27:51.518975-06:00 - read eof
