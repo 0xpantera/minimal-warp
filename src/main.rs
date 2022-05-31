@@ -17,10 +17,13 @@ async fn main() {
 
     let log = warp::log::custom(|info| {
         eprintln!(
-            "{} {} {}",
+            "{} {} {} {:?} from {} with {:?}",
             info.method(),
             info.path(),
             info.status(),
+            info.elapsed(),
+            info.remote_addr().unwrap(),
+            info.request_headers(),
         );
     });
 
