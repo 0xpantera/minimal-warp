@@ -12,6 +12,7 @@ mod types;
 async fn main() {
     let log_filter = std::env::var("RUST_LOG")
         .unwrap_or_else(|_| "minimal_warp=info,warp=error".to_owned());
+
  
     tracing_subscriber::fmt()
         // Use above filter to determine which traces to record
@@ -21,7 +22,9 @@ async fn main() {
         .with_span_events(FmtSpan::CLOSE)
         .init();
 
-    let store = store::Store::new();
+    let store = store::Store::new(
+        "postgres://postgres:postgrespw@localhost:55000/minimalwarp"
+    ).await;
     let store_filter = warp::any().map(move || store.clone());
 
     let cors = warp::cors()

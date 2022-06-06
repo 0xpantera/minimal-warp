@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use parking_lot::RwLock;
+use sqlx::postgres::{PgPoolOptions, PgPool, PgRow};
+use sqlx::Row;
 
 use crate::types::{
     answer::{Answer, AnswerId},
@@ -10,16 +12,21 @@ use crate::types::{
 
 #[derive(Clone, Debug)]
 pub struct Store {
-    pub questions: Arc<RwLock<HashMap<QuestionId, Question>>>,
-    pub answers: Arc<RwLock<HashMap<AnswerId, Answer>>>,
+    pub connection: PgPool,
 }
 
 impl Store {
-    pub fn new() -> Store {
-        Store {
-            questions: Arc::new(RwLock::new(Self::init())),
-            answers: Arc::new(RwLock::new(HashMap::new())),
-        }
+    pub async fn new(db_url: &str) -> Store {
+        let db_pool = match PgPoolOptions::new()
+            .max_connections(5)
+            .connect(db_url).await {
+                Ok(pool) => pool,
+                Err(e) => panic!("Couldn't establish DB connection!"),
+            };
+
+            Store {
+                connection: db_pool,
+            }
     }
 
     fn init() -> HashMap<QuestionId, Question> {
