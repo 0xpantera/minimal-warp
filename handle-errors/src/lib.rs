@@ -9,21 +9,26 @@ use warp::{
     http::StatusCode,
 };
 
+use sqlx::error::Error as SqlxError;
+
 #[derive(Debug)]
 pub enum Error {
     ParseError(std::num::ParseIntError),
     MissingParameters,
     QuestionNotFound,
+    DatabaseQueryError(SqlxError),
 }
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Why *self and not just self (&self)?
         // Would it then only match on a reference?
-        match *self {
+        // Even more confused after db error (&*self)
+        match &*self {
             Error::ParseError(ref err) => write!(f, "Cannot parse parameter: {}", err),
             Error::MissingParameters => write!(f, "Missing parameter"),
             Error::QuestionNotFound => write!(f, "Question not Found"),
+            Error::DatabaseQueryError(e) => write!(f, "Query could not be executed: {}", e),
         }
     }
 }
