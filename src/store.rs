@@ -4,7 +4,7 @@ use sqlx::Row;
 
 use handle_errors::Error;
 
-use crate::routes::question;
+use crate::types::answer::{NewAnswer, Answer, AnswerId};
 use crate::types::question::NewQuestion;
 use crate::types::{
     question::{Question, QuestionId},
@@ -104,6 +104,25 @@ impl Store {
             .await {
                 Ok(_) => Ok(true),
                 Err(e) => Err(Error::DatabaseQueryError)
+            }
+    }
+
+    pub async fn add_answer(&self, new_answer: NewAnswer) -> Result<Answer, Error> {
+        match sqlx::query("INSERT INTO answers (content, question_id) VALUES ($1, $2)")
+            .bind(new_answer.content)
+            .bind(new_answer.question_id.0)
+            .map(|row: PgRow| Answer {
+                id: AnswerId(row.get("id")),
+                content: row.get("content"),
+                question_id: QuestionId(row.get("question_id")),
+            })
+            .fetch_one(&self.connection)
+            .await {
+                Ok(answer) => Ok(answer),
+                Err(e) => {
+                    tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                    Err(Error::DatabaseQueryError)
+                }
             }
     }
 

@@ -1,13 +1,13 @@
 use handle_errors::Error;
 use std::collections::HashMap;
 use warp::hyper::StatusCode;
-use tracing::{instrument, info, Level};
+use tracing::{instrument, Level};
 
 use crate::store::Store;
 
 use crate::types::{
     pagination::{Pagination, extract_pagination},
-    question::{Question, QuestionId, NewQuestion},
+    question::{Question, NewQuestion},
 };
 
 #[instrument]
