@@ -29,7 +29,7 @@ impl Store {
         &self, 
         limit: Option<u32>, 
         offset: u32
-    ) -> Result<Vec<Question>, sqlx::Error> {
+    ) -> Result<Vec<Question>, Error> {
         match sqlx::query("SELECT * from questions LIMIT $1 OFFSET $2")
             .bind(limit)
             .bind(offset)

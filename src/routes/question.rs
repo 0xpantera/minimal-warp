@@ -1,12 +1,12 @@
 use handle_errors::Error;
 use std::collections::HashMap;
 use warp::hyper::StatusCode;
-use tracing::{instrument, info};
+use tracing::{instrument, info, Level};
 
 use crate::store::Store;
 
 use crate::types::{
-    pagination::extract_pagination,
+    pagination::{Pagination, extract_pagination},
     question::{Question, QuestionId},
 };
 
@@ -15,18 +15,19 @@ pub async fn get_questions(
     params: HashMap<String, String>,
     store: Store,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    info!("Querying questions");
+    tracing::event!(target: "minimal_warp", tracing::Level::INFO, "querying questions");
+    let mut pagination = Pagination::default();
+
     if !params.is_empty() {
-        let pagination = extract_pagination(params)?;
-        info!(pagination = true);
-        let res: Vec<Question> = store.questions.read().values().cloned().collect();
-        let res = &res[pagination.start..pagination.end];
-        Ok(warp::reply::json(&res))
-    } else {
-        info!(pagination = false);
-        let res: Vec<Question> = store.questions.read().values().cloned().collect();
-        Ok(warp::reply::json(&res))
+        tracing::event!(Level::INFO, pagination = true);
+        pagination = extract_pagination(params)?;
     }
+        let res: Vec<Question> = match store.get_questions(pagination.limit, pagination.offset).await {
+            Ok(res) => res,
+            Err(e) => return Err(warp::reject::custom(Error::DatabaseQueryError)),
+        };
+
+        Ok(warp::reply::json(&res))
 }
 
 pub async fn add_question(
