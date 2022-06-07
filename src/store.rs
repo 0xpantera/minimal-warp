@@ -97,6 +97,16 @@ impl Store {
             }
     }
 
+    pub async fn delete_question(self, question_id: i32) -> Result<bool, Error> {
+        match sqlx::query("DELETE FROM questions WHERE id = $1")
+            .bind(question_id)
+            .execute(&self.connection)
+            .await {
+                Ok(_) => Ok(true),
+                Err(e) => Err(Error::DatabaseQueryError)
+            }
+    }
+
     fn init() -> HashMap<QuestionId, Question> {
         let file = include_str!("../questions.json");
         serde_json::from_str(file).expect("can't read questions.json")
