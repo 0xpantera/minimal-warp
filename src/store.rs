@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use sqlx::postgres::{PgPoolOptions, PgPool, PgRow};
 use sqlx::Row;
 
@@ -68,7 +67,10 @@ impl Store {
             .fetch_one(&self.connection)
             .await {
                 Ok(question) => Ok(question),
-                Err(e) => Err(Error::DatabaseQueryError),
+                Err(e) => {
+                    tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                    Err(Error::DatabaseQueryError)
+                },
             }
     }
 
@@ -93,7 +95,10 @@ impl Store {
             .fetch_one(&self.connection)
             .await {
                 Ok(question) => Ok(question),
-                Err(e) => Err(Error::DatabaseQueryError),
+                Err(e) => {
+                    tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                    Err(Error::DatabaseQueryError)
+                },
             }
     }
 
@@ -103,7 +108,10 @@ impl Store {
             .execute(&self.connection)
             .await {
                 Ok(_) => Ok(true),
-                Err(e) => Err(Error::DatabaseQueryError)
+                Err(e) => {
+                    tracing::event!(tracing::Level::ERROR, "{:?}", e);
+                    Err(Error::DatabaseQueryError)
+                },
             }
     }
 
@@ -122,12 +130,7 @@ impl Store {
                 Err(e) => {
                     tracing::event!(tracing::Level::ERROR, "{:?}", e);
                     Err(Error::DatabaseQueryError)
-                }
+                },
             }
-    }
-
-    fn init() -> HashMap<QuestionId, Question> {
-        let file = include_str!("../questions.json");
-        serde_json::from_str(file).expect("can't read questions.json")
     }
 }

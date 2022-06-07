@@ -23,7 +23,7 @@ async fn main() {
         .init();
 
     let store = store::Store::new(
-        "postgres://postgres:postgrespw@localhost:55000/minimalwarp"
+        "postgres://postgres:postgrespw@localhost:55000"
     ).await;
     let store_filter = warp::any().map(move || store.clone());
 
