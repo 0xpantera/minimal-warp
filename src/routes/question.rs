@@ -7,7 +7,7 @@ use crate::store::Store;
 
 use crate::types::{
     pagination::{Pagination, extract_pagination},
-    question::{Question, QuestionId},
+    question::{Question, QuestionId, NewQuestion},
 };
 
 #[instrument]
@@ -32,12 +32,11 @@ pub async fn get_questions(
 
 pub async fn add_question(
     store: Store,
-    question: Question,
+    new_question: NewQuestion,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    store
-        .questions
-        .write()
-        .insert(question.id.clone(), question);
+    if let Err(e) = store.add_question(new_question).await {
+        return Err(warp::reject::custom(Error::DatabaseQueryError));
+    }
 
     Ok(warp::reply::with_status("Question added", StatusCode::OK))
 }
