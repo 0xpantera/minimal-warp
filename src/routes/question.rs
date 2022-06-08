@@ -1,4 +1,3 @@
-use handle_errors::Error;
 use std::collections::HashMap;
 use warp::hyper::StatusCode;
 use tracing::{instrument, Level};

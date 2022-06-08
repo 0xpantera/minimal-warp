@@ -25,7 +25,12 @@ async fn main() {
     let store = store::Store::new(
         "postgres://postgres:postgrespw@localhost:55000"
     ).await;
+
+    sqlx::migrate!().run(&store.clone().connection).await.expect("Cannot run migration");
+    
     let store_filter = warp::any().map(move || store.clone());
+
+
 
     let cors = warp::cors()
         .allow_any_origin()

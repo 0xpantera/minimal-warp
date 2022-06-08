@@ -20,7 +20,7 @@ impl Store {
             .max_connections(5)
             .connect(db_url).await {
                 Ok(pool) => pool,
-                Err(e) => panic!("Couldn't establish DB connection!"),
+                Err(_) => panic!("Couldn't establish DB connection!"),
             };
 
             Store { connection: db_pool, }
