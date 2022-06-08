@@ -12,6 +12,7 @@ mod types;
 async fn main() {
     let log_filter = std::env::var("RUST_LOG")
         .unwrap_or_else(|_| "minimal_warp=info,warp=error".to_owned());
+
  
     tracing_subscriber::fmt()
         // Use above filter to determine which traces to record
@@ -21,8 +22,15 @@ async fn main() {
         .with_span_events(FmtSpan::CLOSE)
         .init();
 
-    let store = store::Store::new();
+    let store = store::Store::new(
+        "postgres://postgres:postgrespw@localhost:55000"
+    ).await;
+
+    sqlx::migrate!().run(&store.clone().connection).await.expect("Cannot run migration");
+    
     let store_filter = warp::any().map(move || store.clone());
+
+
 
     let cors = warp::cors()
         .allow_any_origin()
@@ -53,7 +61,7 @@ async fn main() {
 
     let update_question = warp::put()
         .and(warp::path("questions"))
-        .and(warp::path::param::<String>())
+        .and(warp::path::param::<i32>())
         .and(warp::path::end())
         .and(store_filter.clone())
         .and(warp::body::json())
@@ -61,7 +69,7 @@ async fn main() {
 
     let delete_question = warp::delete()
         .and(warp::path("questions"))
-        .and(warp::path::param::<String>())
+        .and(warp::path::param::<i32>())
         .and(warp::path::end())
         .and(store_filter.clone())
         .and_then(routes::question::delete_question);
