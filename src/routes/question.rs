@@ -11,29 +11,6 @@ use crate::types::{
     question::{Question, NewQuestion},
 };
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct APIResponse {
-    message: String
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-struct BadWord {
-    original: String,
-    word: String,
-    deviations: i64,
-    info: i64,
-    #[serde(rename = "replacedLen")]
-    replaced_len: i64,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-struct BadWordsResponse {
-    content: String,
-    bad_words_total: i64,
-    bad_words_list: Vec<BadWord>,
-    censored_content: String,
-}
-
 #[instrument]
 pub async fn get_questions(
     params: HashMap<String, String>,
