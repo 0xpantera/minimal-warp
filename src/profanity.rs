@@ -28,14 +28,32 @@ pub async fn check_profanity(content: String) -> Result<String, handle_errors::E
     let client = reqwest::Client::new();
     let res = client
         .post("https://api.apilayer.com/bad_words?censor_character=*")
-        .header("apikey", "API_KEY")
+        .header("apikey", "sj7Ik9TUYAUlhs6oMuGzK4ErlMbc8Ske")
         .body(content)
         .send()
         .await
         .map_err(|e| handle_errors::Error::ExternalAPIError(e))?;
 
-    let x = 1;
-    let x = 2;
+    if !res.status().is_success() {
+        if res.status().is_client_error() {
+            let err = transform_error(res).await;
+            return Err(handle_errors::Error::ClientError(err));
+        } else {
+            let err = transform_error(res).await;
+            return Err(handle_errors::Error::ServerError(err));
+        }
+    }
 
-    print
+    match res.json::<BadWordsResponse>()
+        .await {
+            Ok(res) => Ok(res.censored_content),
+            Err(e) => Err(handle_errors::Error::ExternalAPIError(e)),
+    }
+}
+
+async fn transform_error(res: reqwest::Response) -> handle_errors::APILayerError {
+    handle_errors::APILayerError {
+        status: res.status().as_u16(),
+        message: res.json::<APIResponse>().await.unwrap().message,
+    }
 }
