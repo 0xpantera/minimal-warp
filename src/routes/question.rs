@@ -12,7 +12,9 @@ use crate::types::{
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct APIResponse(String);
+pub struct APIResponse {
+    message: String
+}
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 struct BadWord {
@@ -66,17 +68,11 @@ pub async fn add_question(
         .map_err(|e| handle_errors::Error::ExternalAPIError(e))?;
 
     if !res.status().is_success() {
-        let status = res.status().as_u16();
-        let message = res.json::<APIResponse>().await.unwrap();
-
-        let err = handle_errors::APILayerError {
-            status,
-            message: message.0,
-        };
-
-        if status < 500 {
+        if res.status().is_client_error() {
+            let err = transform_error(res).await;
             return Err(warp::reject::custom(handle_errors::Error::ClientError(err)));
         } else {
+            let err = transform_error(res).await;
             return Err(warp::reject::custom(handle_errors::Error::ServerError(err)));
         }
     }
@@ -94,8 +90,15 @@ pub async fn add_question(
     };
 
     match store.add_question(question).await {
-        Ok(_) => Ok(warp::reply::with_status("Question added", StatusCode::OK)),
+        Ok(question) => Ok(warp::reply::json(&question)),
         Err(e) => Err(warp::reject::custom(e)),
+    }
+}
+
+async fn transform_error(res: reqwest::Response) -> handle_errors::APILayerError {
+    handle_errors::APILayerError {
+        status: res.status().as_u16(),
+        message: res.json::<APIResponse>().await.unwrap().message,
     }
 }
 
