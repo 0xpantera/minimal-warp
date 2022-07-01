@@ -23,7 +23,7 @@ impl Store {
                 Err(_) => panic!("Couldn't establish DB connection!"),
             };
 
-            Store { connection: db_pool, }
+        Store { connection: db_pool, }
     }
 
     pub async fn get_questions(
