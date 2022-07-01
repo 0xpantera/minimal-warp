@@ -23,7 +23,7 @@ impl Store {
                 Err(_) => panic!("Couldn't establish DB connection!"),
             };
 
-            Store { connection: db_pool, }
+        Store { connection: db_pool, }
     }
 
     pub async fn get_questions(
@@ -54,7 +54,8 @@ impl Store {
         self,
         new_question: NewQuestion
     ) -> Result<Question, Error> {
-        match sqlx::query("INSERT INTO questions (title, content, tags) VALUES ($1, $2, $3) RETURNING id, title, content, tags ")
+        tracing::event!(tracing::Level::INFO, "Attempting to add question");
+        match sqlx::query("INSERT INTO questions (title, content, tags) VALUES ($1, $2, $3) RETURNING CAST (id AS TEXT), title, content, tags")
             .bind(new_question.title)
             .bind(new_question.content)
             .bind(new_question.tags)
@@ -81,7 +82,7 @@ impl Store {
     ) -> Result<Question, Error> {
         match sqlx::query("UPDATE questions SET title = $1, content = $2, tags = $3
         WHERE id = $4
-        RETURNING id, title, content, tags")
+        RETURNING CAST (id AS TEXT), title, content, tags")
             .bind(question.title)
             .bind(question.content)
             .bind(question.tags)
