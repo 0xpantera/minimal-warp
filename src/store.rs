@@ -82,7 +82,7 @@ impl Store {
     ) -> Result<Question, Error> {
         match sqlx::query("UPDATE questions SET title = $1, content = $2, tags = $3
         WHERE id = $4
-        RETURNING id, title, content, tags")
+        RETURNING CAST (id AS TEXT), title, content, tags")
             .bind(question.title)
             .bind(question.content)
             .bind(question.tags)
