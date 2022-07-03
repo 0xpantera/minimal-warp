@@ -55,7 +55,7 @@ impl Store {
         new_question: NewQuestion
     ) -> Result<Question, Error> {
         tracing::event!(tracing::Level::INFO, "Attempting to add question");
-        match sqlx::query("INSERT INTO questions (title, content, tags) VALUES ($1, $2, $3) RETURNING CAST (id AS TEXT), title, content, tags")
+        match sqlx::query("INSERT INTO questions (title, content, tags) VALUES ($1, $2, $3) RETURNING id, title, content, tags")
             .bind(new_question.title)
             .bind(new_question.content)
             .bind(new_question.tags)
@@ -82,7 +82,7 @@ impl Store {
     ) -> Result<Question, Error> {
         match sqlx::query("UPDATE questions SET title = $1, content = $2, tags = $3
         WHERE id = $4
-        RETURNING CAST (id AS TEXT), title, content, tags")
+        RETURNING id, title, content, tags")
             .bind(question.title)
             .bind(question.content)
             .bind(question.tags)
